@@ -3681,14 +3681,25 @@ function swapEnqueueWithUploadAfterRender(renderPromise, message, sticker, callb
             MessageActions.deleteMessage(message.channelId, message.nonce, true);
             callback(result);
         });
-        FileUploader.upload({
-            channelId: message.channelId,
-            file: blob,
-            draftType: 0,
-            message,
-            hasSpoiler: false,
-            filename: `${sticker.name}.gif`
-        });
+		const Uploader = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byProps("uploadFiles", "upload"));
+		const CloudUploader = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byProps("m","n"));
+		let file = new File([blob], "sticker.gif");
+		file.platform = 1;
+		file.spoiler = false;
+		let fileUp = new CloudUploader.n({file:file,platform:1}, message.channelId);
+		fileUp.isImage = true;
+		let uploadOptions = {
+			channelId: message.channelId,
+			uploads: [fileUp],
+			draftType: 0,
+			options: { stickerIds: [] },
+			parsedMessage: { channelId: message.channelId, content: message.content, tts: false, invalidEmojis:[] }
+		}
+		try{
+			Uploader.uploadFiles(uploadOptions);
+		}catch(err){
+			console.error(err);
+		}
     });
 }
 
@@ -3772,6 +3783,8 @@ function checkPermission(flag, user, channel) {
 }
 
 const StickerSendability = isSendableStickerMangled[1];
+StickerSendability.SENDABLE = 0;
+StickerSendability.NONSENDABLE = 1;
 const getStickerSendability = getStickerSendabilityMangled[1];
 
 BdApi.Patcher.instead('FreeStickers', StickerSendabilityModule, isSendableStickerMangled[0], (thisObject, methodArguments, originalMethod) => {
@@ -3781,7 +3794,7 @@ BdApi.Patcher.instead('FreeStickers', StickerSendabilityModule, isSendableSticke
         return true;
     }
 
-    if(stickerSendability !== StickerSendability.NONSENDABLE) {
+    if(stickerSendability === StickerSendability.NONSENDABLE) {
         const [sticker, user, channel] = methodArguments;
 
         if(channel.type === 1/*DM*/ || channel.type === 3/*GROUP_DM*/) {
@@ -3811,7 +3824,6 @@ const original_enqueue = MessageQueue.enqueue;
 
 BdApi.Patcher.instead('FreeStickers', MessageQueue, 'enqueue',
     (thisObject = MessageQueue, methodArguments, originalMethod = original_enqueue) => {
-
     const [ event, callback ] = methodArguments;
 
     if(event.type === 0/*send*/) {
@@ -3840,6 +3852,7 @@ BdApi.Patcher.instead('FreeStickers', MessageQueue, 'enqueue',
                     }
                 }
                 else if(sticker.format_type === 2/*APNG*/) {
+                    MessageActions.deleteMessage(message.channelId, message.nonce, true);
                     swapEnqueueWithUploadAfterRender(RenderApngGif(stickerUrl), message, sticker, callback);
                     return;
                 }
@@ -3850,7 +3863,7 @@ BdApi.Patcher.instead('FreeStickers', MessageQueue, 'enqueue',
             }
         }
     }
-
+	
     return originalMethod.apply(thisObject, methodArguments);
 });
 
