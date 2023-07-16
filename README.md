@@ -25,3 +25,11 @@
 - [rlottie](https://github.com/Samsung/rlottie) and their [WASM build](https://github.com/rlottie/rlottie.github.io)
 - [gif.js wasm build](https://github.com/jnordberg/gif.js/tree/wasm)
 - [apng-js](https://github.com/davidmz/apng-js)
+
+___
+
+# Changes made in fork
+
+Replaced file uploader code in function `swapEnqueueWithUploadAfterRender` with the uploader code from [YABDP4Nitro](https://github.com/riolubruh/YABDP4Nitro)
+
+Also put in [ArjhanToteck's PR](https://github.com/An00nymushun/DiscordFreeStickers/pull/32) which fixes an issue where stickers are sent as links even when if sticker is sendable.
