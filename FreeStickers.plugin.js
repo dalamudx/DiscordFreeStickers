@@ -1,10 +1,10 @@
 /**
  * @name FreeStickers
- * @version 1.4.0
+ * @version 1.4.1
  * @description Link stickers or upload animated stickers as gifs!
  * @author An0
- * @source https://github.com/An00nymushun/DiscordFreeStickers
- * @updateUrl https://raw.githubusercontent.com/An00nymushun/DiscordFreeStickers/main/FreeStickers.plugin.js
+ * @source https://github.com/riolubruh/DiscordFreeStickers
+ * @updateUrl https://raw.githubusercontent.com/riolubruh/DiscordFreeStickers/main/FreeStickers.plugin.js
  */
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3682,11 +3682,11 @@ function swapEnqueueWithUploadAfterRender(renderPromise, message, sticker, callb
             callback(result);
         });
 		const Uploader = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byProps("uploadFiles", "upload"));
-		const CloudUploader = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byProps("m","n"));
+		const CloudUploader = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byProps("CloudUpload"));
 		let file = new File([blob], "sticker.gif");
 		file.platform = 1;
 		file.spoiler = false;
-		let fileUp = new CloudUploader.n({file:file,platform:1}, message.channelId);
+		let fileUp = new CloudUploader.CloudUpload({file:file,platform:1}, message.channelId);
 		fileUp.isImage = true;
 		let uploadOptions = {
 			channelId: message.channelId,
