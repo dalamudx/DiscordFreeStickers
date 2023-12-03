@@ -1,6 +1,6 @@
 /**
  * @name FreeStickers
- * @version 1.4.1
+ * @version 1.4.2
  * @description Link stickers or upload animated stickers as gifs!
  * @author An0
  * @source https://github.com/riolubruh/DiscordFreeStickers
@@ -3679,11 +3679,11 @@ function swapEnqueueWithUploadAfterRender(renderPromise, message, sticker, callb
 
         postAwaiters.set(`/channels/${message.channelId}/messages`, (result) => {
             MessageActions.deleteMessage(message.channelId, message.nonce, true);
-            callback(result);
+            //callback(result);
         });
 		const Uploader = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byProps("uploadFiles", "upload"));
 		const CloudUploader = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byProps("CloudUpload"));
-		let file = new File([blob], "sticker.gif");
+		let file = new File([blob], `${sticker.name}.gif`);
 		file.platform = 1;
 		file.spoiler = false;
 		let fileUp = new CloudUploader.CloudUpload({file:file,platform:1}, message.channelId);
@@ -3709,8 +3709,7 @@ function findModules(modules) {
         if(module == undefined) throw new Error("Couldn't find " + name);
         modules[name] = module;
     }
-
-    return modules;
+    return modules
 }
 
 
@@ -3739,23 +3738,16 @@ const functionToString = (() => {
 })();
 
 const StickerSendabilityModule = (() => {
-    const filter = BdApi.Webpack.Filters.byProps("SENDABLE", "SENDABLE_WITH_PREMIUM", "NONSENDABLE");
-    return BdApi.Webpack.getModule(x => typeof x === 'object' && Object.values(x).some(filter));
+    //const filter = BdApi.Webpack.Filters.byProps("StickerSendability", "getStickerSendability", "isSendableSticker");
+    //return BdApi.Webpack.getModule(filter);
+	return ZLibrary.WebpackModules.getByProps("StickerSendability");
 })();
 const [StickerSendabilityMangled, getStickerSendabilityMangled, isSendableStickerMangled] = (() => {
-    const StickerSendabilityModuleExports = Object.entries(StickerSendabilityModule);
+    const StickerSendabilityModuleExports = ZLibrary.WebpackModules.getByProps("StickerSendability");
     return [
-        StickerSendabilityModuleExports.find(([_, o]) => o.SENDABLE !== undefined),
-        StickerSendabilityModuleExports.find(([_, f]) => {
-            if (typeof f !== 'function') return false;
-            const str = functionToString(f);
-            return str.includes("canUseStickersEverywhere") && str.includes("NONSENDABLE");
-        }),
-        StickerSendabilityModuleExports.find(([_, f]) => {
-            if (typeof f !== 'function') return false;
-            const str = functionToString(f);
-            return !str.includes("canUseStickersEverywhere") && str.includes("SENDABLE");
-        })
+        (StickerSendabilityModuleExports.StickerSendability.SENDABLE !== undefined),
+        StickerSendabilityModuleExports.getStickerSendability,
+        StickerSendabilityModuleExports.isSendableSticker
     ];
 })();
 
@@ -3782,12 +3774,12 @@ function checkPermission(flag, user, channel) {
     return can;
 }
 
-const StickerSendability = isSendableStickerMangled[1];
+const StickerSendability = ZLibrary.WebpackModules.getByProps("StickerSendability").StickerSendability;
 StickerSendability.SENDABLE = 0;
 StickerSendability.NONSENDABLE = 1;
-const getStickerSendability = getStickerSendabilityMangled[1];
+const getStickerSendability = StickerSendabilityModule.getStickerSendability;
 
-BdApi.Patcher.instead('FreeStickers', StickerSendabilityModule, isSendableStickerMangled[0], (thisObject, methodArguments, originalMethod) => {
+BdApi.Patcher.instead('FreeStickers', StickerSendabilityModule, "isSendableSticker", (thisObject, methodArguments, originalMethod) => {
     let stickerSendability = getStickerSendability.apply(thisObject, methodArguments);
 
     if(stickerSendability === StickerSendability.SENDABLE) {
@@ -3826,7 +3818,7 @@ BdApi.Patcher.instead('FreeStickers', MessageQueue, 'enqueue',
     (thisObject = MessageQueue, methodArguments, originalMethod = original_enqueue) => {
     const [ event, callback ] = methodArguments;
 
-    if(event.type === 0/*send*/) {
+    if(event.type === 0) { //send
         let message = event.message;
 
         let stickerId = message.sticker_ids?.[0];
@@ -3841,7 +3833,7 @@ BdApi.Patcher.instead('FreeStickers', MessageQueue, 'enqueue',
 
                 let stickerUrl = new URL(getStickerAssetUrl(sticker));
 
-                if(sticker.format_type === 1/*PNG*/) {
+                if(sticker.format_type === 1) { //png
                     stickerUrl.searchParams.set('size', "160");
 
                     if(message.content === "") {
@@ -3851,12 +3843,12 @@ BdApi.Patcher.instead('FreeStickers', MessageQueue, 'enqueue',
                         message.content = `${message.content}\n${stickerUrl}`;
                     }
                 }
-                else if(sticker.format_type === 2/*APNG*/) {
+                else if(sticker.format_type === 2) { //apng
                     MessageActions.deleteMessage(message.channelId, message.nonce, true);
                     swapEnqueueWithUploadAfterRender(RenderApngGif(stickerUrl), message, sticker, callback);
                     return;
                 }
-                else if(sticker.format_type === 3/*LOTTIE*/) {
+                else if(sticker.format_type === 3) { //lottie
                     swapEnqueueWithUploadAfterRender(RenderLottieGif(stickerUrl), message, sticker, callback);
                     return;
                 }
@@ -3865,6 +3857,49 @@ BdApi.Patcher.instead('FreeStickers', MessageQueue, 'enqueue',
     }
 	
     return originalMethod.apply(thisObject, methodArguments);
+});
+
+BdApi.Patcher.instead('FreeStickers', ZLibrary.DiscordModules.MessageActions, 'sendStickers', (thisObject, methodArguments, originalMethod) => {
+	let message = {
+		content: "",
+		channelId: methodArguments[0], 
+		invalidEmojis: [],
+		tts: false,
+		validNonShortcutEmojis: [],
+	};
+	let stickerId = methodArguments[1][0];
+	let sticker = StickerStore.getStickerById(stickerId);
+    let channel = ChannelStore.getChannel(message.channelId);
+    let currentUser = UserStore.getCurrentUser();
+    let stickerSendability = getStickerSendability(sticker, currentUser, channel);
+	
+	if(stickerId !== undefined) {
+		//delete message.sticker_ids;
+		let stickerUrl = new URL(getStickerAssetUrl(sticker));
+
+		if(sticker.format_type === 1) { //PNG
+			stickerUrl.searchParams.set('size', "160");
+
+			if(message.content === "") {
+				message.content = String(stickerUrl);
+			}
+			else {
+				message.content = `${message.content}\n${stickerUrl}`;
+			}
+			console.log(message);
+			MessageActions.sendMessage(channel.id, message, [], {});
+			return;
+		}
+		else if(sticker.format_type === 2) { //APNG
+			//MessageActions.deleteMessage(message.channelId, message.nonce, true);
+			swapEnqueueWithUploadAfterRender(RenderApngGif(stickerUrl), message, sticker, originalMethod);
+			return;
+		}
+		else if(sticker.format_type === 3) { //LOTTIE
+			swapEnqueueWithUploadAfterRender(RenderLottieGif(stickerUrl), message, sticker, originalMethod);
+			return;
+		}
+    }
 });
 
 BdApi.Patcher.after('FreeStickers', XhrClient, 'post', (thisObject, methodArguments, result) => {
