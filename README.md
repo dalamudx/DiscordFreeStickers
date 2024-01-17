@@ -32,4 +32,4 @@ ___
 
 Replaced file uploader code in function `swapEnqueueWithUploadAfterRender` with the uploader code from [YABDP4Nitro](https://github.com/riolubruh/YABDP4Nitro)
 
-Also put in [ArjhanToteck's PR](https://github.com/An00nymushun/DiscordFreeStickers/pull/32) which fixes an issue where stickers are sent as links even when if sticker is sendable.
+Also put in [ArjhanToteck's PR](https://github.com/An00nymushun/DiscordFreeStickers/pull/32) which fixes an issue where stickers are sent as links even when a sticker is sendable.
