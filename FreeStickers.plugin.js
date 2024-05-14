@@ -3808,7 +3808,9 @@ function getStickerAssetUrl(sticker) {
     if (sticker.format_type === 3/*LOTTIE*/) {
         return `${location.origin}/stickers/${sticker.id}.json`;
     }
-
+    else if (sticker.format_type === 4/*GIF*/) {
+        return `https://media.discordapp.net/stickers/${sticker.id}.gif`;
+    }
     return `https://media.discordapp.net/stickers/${sticker.id}.png`;
 }
 
@@ -3851,6 +3853,14 @@ BdApi.Patcher.instead('FreeStickers', MessageQueue, 'enqueue',
                 else if(sticker.format_type === 3) { //lottie
                     swapEnqueueWithUploadAfterRender(RenderLottieGif(stickerUrl), message, sticker, callback);
                     return;
+                }
+                else if (sticker.format_type === 4) { //gif
+                    if (message.content === "") {
+                        message.content = String(stickerUrl);
+                    }
+                    else {
+                        message.content = `${message.content}\n${stickerUrl}`;
+                    }
                 }
             }
         }
@@ -3899,6 +3909,16 @@ BdApi.Patcher.instead('FreeStickers', ZLibrary.DiscordModules.MessageActions, 's
 			swapEnqueueWithUploadAfterRender(RenderLottieGif(stickerUrl), message, sticker, originalMethod);
 			return;
 		}
+        else if (sticker.format_type === 4) { //gif
+            if (message.content === "") {
+                message.content = String(stickerUrl);
+            }
+            else {
+                message.content = `${message.content}\n${stickerUrl}`;
+            }
+            MessageActions.sendMessage(channel.id, message, [], {});
+            return;
+        }
     }
 });
 
