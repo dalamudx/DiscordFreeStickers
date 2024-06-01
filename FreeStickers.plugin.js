@@ -1,6 +1,6 @@
 /**
  * @name FreeStickers
- * @version 1.4.2
+ * @version 1.4.3
  * @description Link stickers or upload animated stickers as gifs!
  * @author An0
  * @source https://github.com/riolubruh/DiscordFreeStickers
