@@ -1,8 +1,8 @@
 /**
  * @name FreeStickers
- * @version 1.4.3
+ * @version 1.4.4
  * @description Link stickers or upload animated stickers as gifs!
- * @author An0
+ * @author An0 & Riolubruh
  * @source https://github.com/riolubruh/DiscordFreeStickers
  * @updateUrl https://raw.githubusercontent.com/riolubruh/DiscordFreeStickers/main/FreeStickers.plugin.js
  */
@@ -3682,11 +3682,11 @@ function swapEnqueueWithUploadAfterRender(renderPromise, message, sticker, callb
             //callback(result);
         });
 		const Uploader = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byProps("uploadFiles", "upload"));
-		const CloudUploader = BdApi.Webpack.getModule(BdApi.Webpack.Filters.byProps("CloudUpload"));
+		const CloudUploader = BdApi.Webpack.getByKeys("m", "n").n;
 		let file = new File([blob], `${sticker.name}.gif`);
 		file.platform = 1;
 		file.spoiler = false;
-		let fileUp = new CloudUploader.CloudUpload({file:file,platform:1}, message.channelId);
+		let fileUp = new CloudUploader({file:file,platform:1}, message.channelId);
 		fileUp.isImage = true;
 		let uploadOptions = {
 			channelId: message.channelId,
@@ -3705,7 +3705,7 @@ function swapEnqueueWithUploadAfterRender(renderPromise, message, sticker, callb
 
 function findModules(modules) {
     for (const [name, props] of Object.entries(modules)) {
-        const module = BdApi.findModuleByProps(...props);
+        const module = BdApi.Webpack.getByKeys(...props);
         if(module == undefined) throw new Error("Couldn't find " + name);
         modules[name] = module;
     }
@@ -3725,7 +3725,7 @@ const {
     UserStore: ['getCurrentUser'],
     StickerStore: ['getStickerById'],
     XhrClient: ['post', 'getXHR'],
-    PermissionEvaluator: ['can', 'getHighestRole', 'canEveryone']
+    PermissionEvaluator: ['can', 'getHighestRole']
 });
 
 const functionToString = (() => {
@@ -3737,17 +3737,13 @@ const functionToString = (() => {
     return (f) => toString.call(f);
 })();
 
-const StickerSendabilityModule = (() => {
-    //const filter = BdApi.Webpack.Filters.byProps("StickerSendability", "getStickerSendability", "isSendableSticker");
-    //return BdApi.Webpack.getModule(filter);
-	return ZLibrary.WebpackModules.getByProps("StickerSendability");
-})();
+const StickerSendabilityModule = BdApi.Webpack.getByKeys("cO", "eb", "kl");
 const [StickerSendabilityMangled, getStickerSendabilityMangled, isSendableStickerMangled] = (() => {
-    const StickerSendabilityModuleExports = ZLibrary.WebpackModules.getByProps("StickerSendability");
+    const StickerSendabilityModuleExports = StickerSendabilityModule;
     return [
-        (StickerSendabilityModuleExports.StickerSendability.SENDABLE !== undefined),
-        StickerSendabilityModuleExports.getStickerSendability,
-        StickerSendabilityModuleExports.isSendableSticker
+        (StickerSendabilityModuleExports.eb.SENDABLE !== undefined),
+        StickerSendabilityModuleExports.cO,
+        StickerSendabilityModuleExports.kl
     ];
 })();
 
@@ -3767,19 +3763,19 @@ function checkPermission(flag, user, channel) {
             setTimeout(() => permissionsCache.clear(), 10);
         }
 
-        can = PermissionEvaluator.can({ permission: flag, user, context: channel });
+        can = PermissionEvaluator.can(BigInt(flag), channel);
         permissionsCache.set(key, can);
     }
 
     return can;
 }
 
-const StickerSendability = ZLibrary.WebpackModules.getByProps("StickerSendability").StickerSendability;
+const StickerSendability = BdApi.Webpack.getByKeys("cO", "eb", "kl").eb;
 StickerSendability.SENDABLE = 0;
 StickerSendability.NONSENDABLE = 1;
-const getStickerSendability = StickerSendabilityModule.getStickerSendability;
+const getStickerSendability = StickerSendabilityModule.cO;
 
-BdApi.Patcher.instead('FreeStickers', StickerSendabilityModule, "isSendableSticker", (thisObject, methodArguments, originalMethod) => {
+BdApi.Patcher.instead('FreeStickers', StickerSendabilityModule, "kl", (thisObject, methodArguments, originalMethod) => {
     let stickerSendability = getStickerSendability.apply(thisObject, methodArguments);
 
     if(stickerSendability === StickerSendability.SENDABLE) {
@@ -3794,10 +3790,10 @@ BdApi.Patcher.instead('FreeStickers', StickerSendabilityModule, "isSendableStick
         }
 
         if(sticker.format_type === 1/*PNG*/) {
-            return checkPermission(0x4000n/*EMBED_LINKS*/, user, channel);
+            return checkPermission(1n << 14n/*EMBED_LINKS*/, user, channel);
         }
         else {
-            return checkPermission(0x8000n/*ATTACH_FILES*/, user, channel);
+            return checkPermission(1n << 15n/*ATTACH_FILES*/, user, channel);
         }
     }
 
