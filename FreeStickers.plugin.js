@@ -1,6 +1,6 @@
 /**
  * @name FreeStickers
- * @version 1.4.4
+ * @version 1.4.5
  * @description Link stickers or upload animated stickers as gifs!
  * @author An0 & Riolubruh
  * @source https://github.com/riolubruh/DiscordFreeStickers
@@ -3865,7 +3865,7 @@ BdApi.Patcher.instead('FreeStickers', MessageQueue, 'enqueue',
     return originalMethod.apply(thisObject, methodArguments);
 });
 
-BdApi.Patcher.instead('FreeStickers', ZLibrary.DiscordModules.MessageActions, 'sendStickers', (thisObject, methodArguments, originalMethod) => {
+BdApi.Patcher.instead('FreeStickers', MessageActions, 'sendStickers', (thisObject, methodArguments, originalMethod) => {
 	let message = {
 		content: "",
 		channelId: methodArguments[0], 
