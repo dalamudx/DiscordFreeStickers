@@ -30,6 +30,10 @@ ___
 
 # Changes made in fork
 
+Added support for replies.
+
+General fixes.
+
 Fixed plugin not working anymore after Discord update that re-obfuscated a ton of modules.
 
 Replaced file uploader code in function `swapEnqueueWithUploadAfterRender` with fixed uploader code.
