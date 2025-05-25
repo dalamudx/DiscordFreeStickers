@@ -1,6 +1,6 @@
 /**
  * @name FreeStickers
- * @version 1.4.6
+ * @version 1.4.7
  * @description Link stickers or upload animated stickers as gifs!
  * @author An0 & Riolubruh
  * @source https://github.com/riolubruh/DiscordFreeStickers
@@ -3715,7 +3715,7 @@ function findModules(modules) {
 const {
     FileUploader, MessageActions, MessageQueue, MessageDispatcher, MessageCache, ChannelStore, UserStore, StickerStore, XhrClient, PermissionEvaluator
 } = findModules({
-    FileUploader: ["uploadFiles", "upload"],
+    FileUploader: ["uploadFiles", "cancel"],
     MessageActions: ['deleteMessage', 'sendClydeError'],
     MessageQueue: ['enqueue', 'requests'],
     MessageDispatcher: ['dispatch', 'wait'],
