@@ -1,6 +1,6 @@
 /**
  * @name FreeStickers
- * @version 1.4.7
+ * @version 1.4.8
  * @description Link stickers or upload animated stickers as gifs!
  * @author An0 & Riolubruh
  * @source https://github.com/riolubruh/DiscordFreeStickers
@@ -3677,25 +3677,13 @@ function swapEnqueueWithUploadAfterRender(renderPromise, message, sticker, reply
             }
         }
 
-        /* postAwaiters.set(`/channels/${message.channelId}/messages`, (result) => {
-            MessageActions.deleteMessage(message.channelId, message.nonce, true);
-            callback(result);
-        }); */
-
 		let file = new File([blob], `${sticker.name}.gif`);
 		file.platform = 1;
 		file.spoiler = false;
 		let fileUp = new CloudUploader({file:file,platform:1}, message.channelId);
 		fileUp.isImage = true;
-		let uploadOptions = {
-			channelId: message.channelId,
-			uploads: [fileUp],
-			draftType: 0,
-			options: replyReference,
-			parsedMessage: { channelId: message.channelId, content: message.content, tts: false, invalidEmojis:[] }
-		}
 		try{
-			FileUploader.uploadFiles(uploadOptions);
+			MessageActions._sendMessage(message.channelId, message, {nonce: message.nonce, attachmentsToUpload: [fileUp]});
 		}catch(err){
 			console.error(err);
 		}
@@ -3713,9 +3701,8 @@ function findModules(modules) {
 
 
 const {
-    FileUploader, MessageActions, MessageQueue, MessageDispatcher, MessageCache, ChannelStore, UserStore, StickerStore, XhrClient, PermissionEvaluator
+    MessageActions, MessageQueue, MessageDispatcher, MessageCache, ChannelStore, UserStore, StickerStore, XhrClient, PermissionEvaluator
 } = findModules({
-    FileUploader: ["uploadFiles", "cancel"],
     MessageActions: ['deleteMessage', 'sendClydeError'],
     MessageQueue: ['enqueue', 'requests'],
     MessageDispatcher: ['dispatch', 'wait'],
